@@ -1,8 +1,7 @@
-ruby '2.0.0'
 source 'https://rubygems.org'
 
 
-gem 'encryptor2'
+gem 'encryptor2', github: "financeit/encryptor"
 
 group :development do 
   gem 'pry'
