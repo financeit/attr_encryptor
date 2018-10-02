@@ -1,3 +1,9 @@
+GIT
+  remote: git://github.com/financeit/encryptor.git
+  revision: b341e35e82df8d8ddd26db9ad07ee579c4df455e
+  specs:
+    encryptor2 (1.0.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -70,7 +76,6 @@ GEM
       dm-core (~> 1.2.0)
     do_sqlite3 (0.10.13)
       data_objects (= 0.10.13)
-    encryptor2 (1.0.0)
     fastercsv (1.5.5)
     i18n (0.6.4)
     json (1.8.0)
