@@ -5,10 +5,14 @@ if defined?(ActiveRecord::Base)
         def self.extended(base) # :nodoc:
           base.class_eval do
             class << self
-              alias_method_chain :attr_encrypted, :defined_attributes
-              alias_method_chain :attr_encryptor, :defined_attributes
+              alias_method :attr_encrypted_without_defined_attributes, :attr_encrypted
+              alias_method :attr_encrypted, :attr_encrypted_with_defined_attributes
+
+              alias_method :attr_encryptor_without_defined_attributes, :attr_encrypted
+              alias_method :attr_encryptor, :attr_encrypted_with_defined_attributes
+
             end
-            
+
             attr_encrypted_options[:encode] = true
           end
         end
@@ -22,7 +26,7 @@ if defined?(ActiveRecord::Base)
           attr_encrypted_without_defined_attributes *attrs
           attrs.reject { |attr| attr.is_a?(Hash) }.each { |attr| alias_method "#{attr}_before_type_cast", attr }
         end
-        
+
         alias attr_encryptor_with_defined_attributes attr_encrypted_with_defined_attributes
       end
     end
