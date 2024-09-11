@@ -58,12 +58,12 @@ end
 
 class AttrEncryptorTest < Test::Unit::TestCase
 
-  def test_should_store_email_in_encrypted_attributes
-    assert User.encrypted_attributes.include?(:email)
+  def test_should_store_email_in_attr_encryptor_encrypted_attributes
+    assert User.attr_encryptor_encrypted_attributes.include?(:email)
   end
 
-  def test_should_not_store_salt_in_encrypted_attributes
-    assert !User.encrypted_attributes.include?(:salt)
+  def test_should_not_store_salt_in_attr_encryptor_encrypted_attributes
+    assert !User.attr_encryptor_encrypted_attributes.include?(:salt)
   end
 
   def test_attr_encrypted_should_return_true_for_email
@@ -71,7 +71,7 @@ class AttrEncryptorTest < Test::Unit::TestCase
   end
 
   def test_attr_encrypted_should_not_use_the_same_attribute_name_for_two_attributes_in_the_same_line
-    assert_not_equal User.encrypted_attributes[:email][:attribute], User.encrypted_attributes[:without_encoding][:attribute]
+    assert_not_equal User.attr_encryptor_encrypted_attributes[:email][:attribute], User.attr_encryptor_encrypted_attributes[:without_encoding][:attribute]
   end
 
   def test_attr_encrypted_should_return_false_for_salt
@@ -189,8 +189,8 @@ class AttrEncryptorTest < Test::Unit::TestCase
     assert_equal encrypted, @user.crypted_password_test
   end
 
-  def test_should_inherit_encrypted_attributes
-    assert_equal [User.encrypted_attributes.keys, :testing].flatten.collect { |key| key.to_s }.sort, Admin.encrypted_attributes.keys.collect { |key| key.to_s }.sort
+  def test_should_inherit_attr_encryptor_encrypted_attributes
+    assert_equal [User.attr_encryptor_encrypted_attributes.keys, :testing].flatten.collect { |key| key.to_s }.sort, Admin.attr_encryptor_encrypted_attributes.keys.collect { |key| key.to_s }.sort
   end
 
   def test_should_inherit_attr_encrypted_options
@@ -200,7 +200,7 @@ class AttrEncryptorTest < Test::Unit::TestCase
 
   def test_should_not_inherit_unrelated_attributes
     assert SomeOtherClass.attr_encrypted_options.empty?
-    assert SomeOtherClass.encrypted_attributes.empty?
+    assert SomeOtherClass.attr_encryptor_encrypted_attributes.empty?
   end
 
   def test_should_evaluate_a_symbol_option
@@ -258,7 +258,7 @@ class AttrEncryptorTest < Test::Unit::TestCase
   end
 
   def test_should_work_with_aliased_attr_encryptor
-    assert User.encrypted_attributes.include?(:aliased)
+    assert User.attr_encryptor_encrypted_attributes.include?(:aliased)
   end
 
   def test_should_always_reset_options
