@@ -140,7 +140,7 @@ module AttrEncryptor
         load_iv_for_attribute(attribute,encrypted_attribute_name, options[:algorithm])
         load_salt_for_attribute(attribute,encrypted_attribute_name)
 
-        instance_variable_get("@#{attribute}") || instance_variable_set("@#{attribute}", decrypt(attribute, send(encrypted_attribute_name)))
+        instance_variable_get("@#{attribute}") || instance_variable_set("@#{attribute}", attr_encryptor_decrypt(attribute, send(encrypted_attribute_name)))
       end
 
       define_method("#{attribute}=") do |value|
@@ -192,8 +192,8 @@ module AttrEncryptor
   #     attr_encrypted :email
   #   end
   #
-  #   email = User.decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
-  def decrypt(attribute, encrypted_value, options = {})
+  #   email = User.attr_encryptor_decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
+  def attr_encryptor_decrypt(attribute, encrypted_value, options = {})
     options = attr_encryptor_encrypted_attributes[attribute.to_sym].merge(options)
     if options[:if] && !options[:unless] && !encrypted_value.nil? && !(encrypted_value.is_a?(String) && encrypted_value.empty?)
       encrypted_value = encrypted_value.unpack(options[:encode]).first if options[:encode]
@@ -279,9 +279,9 @@ module AttrEncryptor
     #  end
     #
     #  @user = User.new('some-secret-key')
-    #  @user.decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
-    def decrypt(attribute, encrypted_value)
-      self.class.decrypt(attribute, encrypted_value, evaluated_attr_encrypted_options_for(attribute))
+    #  @user.attr_encryptor_decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
+    def attr_encryptor_decrypt(attribute, encrypted_value)
+      self.class.attr_encryptor_decrypt(attribute, encrypted_value, evaluated_attr_encrypted_options_for(attribute))
     end
 
     # Encrypts a value for the attribute specified using options evaluated in the current object's scope
