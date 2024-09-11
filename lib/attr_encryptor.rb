@@ -148,7 +148,7 @@ module AttrEncryptor
         load_salt_for_attribute(attribute, encrypted_attribute_name)
 
         #this add's the iv and salt on the options for this instance
-        send("#{encrypted_attribute_name}=", encrypt(attribute, value))
+        send("#{encrypted_attribute_name}=", attr_encryptor_encrypt(attribute, value))
         instance_variable_set("@#{attribute}", value)
       end
 
@@ -219,8 +219,8 @@ module AttrEncryptor
   #     attr_encrypted :email
   #   end
   #
-  #   encrypted_email = User.encrypt(:email, 'test@example.com')
-  def encrypt(attribute, value, options = {})
+  #   encrypted_email = User.attr_encryptor_encrypt(:email, 'test@example.com')
+  def attr_encryptor_encrypt(attribute, value, options = {})
     options = attr_encryptor_encrypted_attributes[attribute.to_sym].merge(options)
     if options[:if] && !options[:unless] && !value.nil? && !(value.is_a?(String) && value.empty?)
       value = options[:marshal] ? options[:marshaler].send(options[:dump_method], value) : value.to_s
@@ -298,9 +298,9 @@ module AttrEncryptor
     #  end
     #
     #  @user = User.new('some-secret-key')
-    #  @user.encrypt(:email, 'test@example.com')
-    def encrypt(attribute, value)
-      self.class.encrypt(attribute, value, evaluated_attr_encrypted_options_for(attribute))
+    #  @user.attr_encryptor_encrypt(:email, 'test@example.com')
+    def attr_encryptor_encrypt(attribute, value)
+      self.class.attr_encryptor_encrypt(attribute, value, evaluated_attr_encrypted_options_for(attribute))
     end
 
     protected
