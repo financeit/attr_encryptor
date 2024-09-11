@@ -9,7 +9,7 @@ module AttrEncryptor
     base.class_eval do
       include InstanceMethods
       attr_writer :attr_encrypted_options
-      @attr_encrypted_options, @encrypted_attributes = {}, {}
+      @attr_encrypted_options, @attr_encryptor_encrypted_attributes = {}, {}
     end
   end
 
@@ -140,7 +140,7 @@ module AttrEncryptor
         load_iv_for_attribute(attribute,encrypted_attribute_name, options[:algorithm])
         load_salt_for_attribute(attribute,encrypted_attribute_name)
 
-        instance_variable_get("@#{attribute}") || instance_variable_set("@#{attribute}", decrypt(attribute, send(encrypted_attribute_name)))
+        instance_variable_get("@#{attribute}") || instance_variable_set("@#{attribute}", attr_encryptor_decrypt(attribute, send(encrypted_attribute_name)))
       end
 
       define_method("#{attribute}=") do |value|
@@ -148,7 +148,7 @@ module AttrEncryptor
         load_salt_for_attribute(attribute, encrypted_attribute_name)
 
         #this add's the iv and salt on the options for this instance
-        send("#{encrypted_attribute_name}=", encrypt(attribute, value))
+        send("#{encrypted_attribute_name}=", attr_encryptor_encrypt(attribute, value))
         instance_variable_set("@#{attribute}", value)
       end
 
@@ -156,7 +156,7 @@ module AttrEncryptor
         value = send(attribute)
         value.respond_to?(:empty?) ? !value.empty? : !!value
       end
-      encrypted_attributes[attribute.to_sym] = options.merge(:attribute => encrypted_attribute_name)
+      attr_encryptor_encrypted_attributes[attribute.to_sym] = options.merge(:attribute => encrypted_attribute_name)
     end
   end
   alias_method :attr_encryptor, :attr_encrypted
@@ -181,7 +181,7 @@ module AttrEncryptor
   #   User.attr_encrypted?(:name)  # false
   #   User.attr_encrypted?(:email) # true
   def attr_encrypted?(attribute)
-    encrypted_attributes.has_key?(attribute.to_sym)
+    attr_encryptor_encrypted_attributes.has_key?(attribute.to_sym)
   end
 
   # Decrypts a value for the attribute specified
@@ -192,9 +192,9 @@ module AttrEncryptor
   #     attr_encrypted :email
   #   end
   #
-  #   email = User.decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
-  def decrypt(attribute, encrypted_value, options = {})
-    options = encrypted_attributes[attribute.to_sym].merge(options)
+  #   email = User.attr_encryptor_decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
+  def attr_encryptor_decrypt(attribute, encrypted_value, options = {})
+    options = attr_encryptor_encrypted_attributes[attribute.to_sym].merge(options)
     if options[:if] && !options[:unless] && !encrypted_value.nil? && !(encrypted_value.is_a?(String) && encrypted_value.empty?)
       encrypted_value = encrypted_value.unpack(options[:encode]).first if options[:encode]
       value = options[:encryptor].send(options[:decrypt_method], options.merge!(:value => encrypted_value))
@@ -219,9 +219,9 @@ module AttrEncryptor
   #     attr_encrypted :email
   #   end
   #
-  #   encrypted_email = User.encrypt(:email, 'test@example.com')
-  def encrypt(attribute, value, options = {})
-    options = encrypted_attributes[attribute.to_sym].merge(options)
+  #   encrypted_email = User.attr_encryptor_encrypt(:email, 'test@example.com')
+  def attr_encryptor_encrypt(attribute, value, options = {})
+    options = attr_encryptor_encrypted_attributes[attribute.to_sym].merge(options)
     if options[:if] && !options[:unless] && !value.nil? && !(value.is_a?(String) && value.empty?)
       value = options[:marshal] ? options[:marshaler].send(options[:dump_method], value) : value.to_s
       encrypted_value = options[:encryptor].send(options[:encrypt_method], options.merge!(:value => value))
@@ -241,9 +241,9 @@ module AttrEncryptor
   #     attr_encrypted :email, :key => 'my secret key'
   #   end
   #
-  #   User.encrypted_attributes # { :email => { :attribute => 'encrypted_email', :key => 'my secret key' } }
-  def encrypted_attributes
-    @encrypted_attributes ||= superclass.encrypted_attributes.dup
+  #   User.attr_encryptor_encrypted_attributes # { :email => { :attribute => 'encrypted_email', :key => 'my secret key' } }
+  def attr_encryptor_encrypted_attributes
+    @attr_encryptor_encrypted_attributes ||= superclass.attr_encryptor_encrypted_attributes.dup
   end
 
   # Forwards calls to :encrypt_#{attribute} or :decrypt_#{attribute} to the corresponding encrypt or decrypt method
@@ -279,9 +279,9 @@ module AttrEncryptor
     #  end
     #
     #  @user = User.new('some-secret-key')
-    #  @user.decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
-    def decrypt(attribute, encrypted_value)
-      self.class.decrypt(attribute, encrypted_value, evaluated_attr_encrypted_options_for(attribute))
+    #  @user.attr_encryptor_decrypt(:email, 'SOME_ENCRYPTED_EMAIL_STRING')
+    def attr_encryptor_decrypt(attribute, encrypted_value)
+      self.class.attr_encryptor_decrypt(attribute, encrypted_value, evaluated_attr_encrypted_options_for(attribute))
     end
 
     # Encrypts a value for the attribute specified using options evaluated in the current object's scope
@@ -298,16 +298,16 @@ module AttrEncryptor
     #  end
     #
     #  @user = User.new('some-secret-key')
-    #  @user.encrypt(:email, 'test@example.com')
-    def encrypt(attribute, value)
-      self.class.encrypt(attribute, value, evaluated_attr_encrypted_options_for(attribute))
+    #  @user.attr_encryptor_encrypt(:email, 'test@example.com')
+    def attr_encryptor_encrypt(attribute, value)
+      self.class.attr_encryptor_encrypt(attribute, value, evaluated_attr_encrypted_options_for(attribute))
     end
 
     protected
 
       # Returns attr_encrypted options evaluated in the current object's scope for the attribute specified
       def evaluated_attr_encrypted_options_for(attribute)
-        self.class.encrypted_attributes[attribute.to_sym].inject({}) { |hash, (option, value)| hash.merge!(option => evaluate_attr_encrypted_option(value)) }
+        self.class.attr_encryptor_encrypted_attributes[attribute.to_sym].inject({}) { |hash, (option, value)| hash.merge!(option => evaluate_attr_encrypted_option(value)) }
       end
 
       # Evaluates symbol (method reference) or proc (responds to call) options
@@ -334,12 +334,12 @@ module AttrEncryptor
             rescue RuntimeError
             end
           end
-        self.class.encrypted_attributes[attribute.to_sym] = self.class.encrypted_attributes[attribute.to_sym].merge(:iv => iv.unpack("m").first) if (iv && !iv.empty?)
+        self.class.attr_encryptor_encrypted_attributes[attribute.to_sym] = self.class.attr_encryptor_encrypted_attributes[attribute.to_sym].merge(:iv => iv.unpack("m").first) if (iv && !iv.empty?)
       end
 
       def load_salt_for_attribute(attribute, encrypted_attribute_name)
         salt = send("#{encrypted_attribute_name.to_s + "_salt"}") || send("#{encrypted_attribute_name.to_s + "_salt"}=", Digest::SHA256.hexdigest((Time.now.to_i * rand(1000)).to_s)[0..15])
-        self.class.encrypted_attributes[attribute.to_sym] = self.class.encrypted_attributes[attribute.to_sym].merge(:salt => salt)
+        self.class.attr_encryptor_encrypted_attributes[attribute.to_sym] = self.class.attr_encryptor_encrypted_attributes[attribute.to_sym].merge(:salt => salt)
       end
 
 
