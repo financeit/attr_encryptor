@@ -1,5 +1,5 @@
 GIT
-  remote: git://github.com/financeit/encryptor.git
+  remote: https://github.com/financeit/encryptor.git
   revision: b341e35e82df8d8ddd26db9ad07ee579c4df455e
   specs:
     encryptor2 (1.0.0)
@@ -96,7 +96,7 @@ GEM
     stringex (1.5.1)
     thread_safe (0.1.0)
       atomic
-    tzinfo (0.3.37)
+    tzinfo (0.3.61)
     uuidtools (2.1.4)
 
 PLATFORMS
@@ -106,7 +106,7 @@ DEPENDENCIES
   activerecord
   datamapper
   dm-sqlite-adapter
-  encryptor2
+  encryptor2!
   mocha
   pry
   sequel
